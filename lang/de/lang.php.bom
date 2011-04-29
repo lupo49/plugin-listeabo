@@ -1,0 +1,16 @@
+﻿<?php
+$lang['menu']                  = 'Abonnementenliste';
+$lang['abo_aboactifs']         = 'Derzeitige Abonnements';
+$lang['abo_abode']             = 'Abonnement für';
+$lang['abo_noabo']             = 'Kein Abonnement';
+$lang['abo_estadmin']          = 'Du bis Administrator, Du kannst ';
+$lang['abo_voirtousabo']       = 'alle Abonnements sehen';
+$lang['abo_voirvosabo']        = 'Siehe deine Abonnements';
+$lang['abo_whoto']             = 'Um sich bei einer Seite anzumelden, klicken Sie auf der jeweiligen Seite auf den Link "Änderungen abonnieren". Sie erhalten jedes Mal eine E-Mail, wenn diese Seite verändert wurde. <br /> Sie können auch eine Namensraumänderung abonnieren. Dafür klicken Sie auf den Link "Namensraumänderungen abonnieren". Dann erhalten Sie jedes Mal eine E-Mail, wenn eine Seite innerhalb dieses Namensraums geändert wurde.';
+$lang['abo_cat']               = 'Namensraum';
+$lang['abo_cptabo']            = 'Abonnement(s)';
+$lang['abo_cptdans']           = 'bei';
+$lang['abo_cptpages']          = 'Seite(n)';
+$lang['abo_cptet']             = 'und';
+$lang['abo_cptcat']            = 'Namensraum(-räumen)';
+
