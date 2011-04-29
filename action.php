@@ -37,7 +37,6 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
      * register the eventhandlers
      */
     function register(&$contr) {
-        //$contr->register_hook('IO_WIKIPAGE_WRITE', 'BEFORE', $this, 'ping', array());
         $contr->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE', $this, '_handle_act', array());
         $contr->register_hook('TPL_ACT_UNKNOWN', 'BEFORE', $this, '_handle_tpl_act', array());
     }
@@ -57,40 +56,48 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
         global $INFO;
         global $conf;
         global $auth;
-
-        $nbAbo=0;
-        $nbPages=0;
-        $nbCat=0;
+        $nbAbo = 0;
+        $nbPages = 0;
+        $nbCat = 0;
 
         if($event->data != 'listeabo') return;
         $event->preventDefault();
 
-        //Recherche des fichiers mlist dans le dossier meta
+        // Search for *.mlist files in our data/meta-directory
         $pages = $this->list_mlist($conf['savedir'].'/meta',true, $pages);
-
-        //Si on est en mode admin
-        //if (in_array('admin',$INFO['userinfo']['grps'])) $admin = trim($_REQUEST['admin']);
-        //if (in_array('admin',$INFO['userinfo']['grps'])) $user = trim($_REQUEST['user']);
+        
+        // Check if current user belongs to the manager group
         if (auth_ismanager($INFO['client'])) {
-          $admin = trim($_REQUEST['admin']);
+          $admin = trim($_REQUEST['admin']);  // If set to true, an admin wants to see all subscriptions
           $user = trim($_REQUEST['user']);
         }
-        if (!$user) $user=$INFO['client'];
-        $userName=$auth->getUserData($user);
-        $userName=$userName['name'];
-        if (!$userName) $userName=$user;
+        
+        if (!$user) $user = $INFO['client'];
+        // Fetch fullname of the user 
+        $userName = $auth->getUserData($user);
+        $userName = $userName['name'];
+        // Use loginname if no userdetails were found
+        if (!$userName) $userName = $user;
 
-        //Recherche dans chaque fichier mlist trouve
-        foreach((is_array($pages)?$pages:array()) as $page) {
-          preg_match("/meta\/(.*).mlist$/",$page,$page2);
-          $page2=preg_replace("/\//",":",$page2[1]);
+        // Search in every found mlist file
+        foreach( (is_array($pages) ? $pages : array()) as $page) {
+          // Save filename without extension into $page2
+          preg_match("/meta\/(.*).mlist$/", $page, $page2);
+          // replace slash with colon namespace seperator
+          $page2 = preg_replace("/\//", ":", $page2[1]);
                                                   
+          // Read content from file
           foreach(file($page) as $nom) {
-          $nom=chop($nom);
-            if ($nom==$user || $admin) {
-              //if (!in_array($page2, $mespages)) $mespages[]=$page2;
-              if (!is_array($mespages) || !in_array($page2, $mespages)) $mespages[]=$page2;
-              if ($admin) $abonnes[$page2][]=$nom;
+            // $nom holds the current line
+            $nom = chop($nom);
+            
+            // Discard digest information of the line
+            $digest = strpos($nom, ' ');
+            if($digest) $nom = substr($nom, 0, $digest);
+
+            if ($nom == $user || $admin) {
+              if (!is_array($mespages) || !in_array($page2, $mespages)) $mespages[] = $page2;
+              if ($admin) $abonnes[$page2][] = $nom;
               else break;
             }
           }
@@ -105,14 +112,14 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
 
           foreach($mespages as $page) {
             if (!$pagelist) {
-              $titrePage=explode(":",$page);
-              $titrePage=$titrePage[sizeof($titrePage)-1];
-              $titrePage=str_replace('_',' ',$titrePage);
+              $titrePage = explode(":",$page);
+              $titrePage = $titrePage[sizeof($titrePage) - 1];
+              $titrePage = str_replace('_', ' ', $titrePage);
             }
             else {
-              $pagelist->page['id']=$page;
+              $pagelist->page['id'] = $page;
               $pagelist->page['exists'] = 1;
-              $pagelist->_meta=NULL;
+              $pagelist->_meta = NULL;
               $titrePage = $pagelist->_getMeta('title');
               if (!$titrePage) $titrePage = str_replace('_', ' ', noNS($page));
               $titrePage = hsc($titrePage);
@@ -125,7 +132,7 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
               $nbPages++;
             }
             else {
-              print $this->getLang('abo_cat')." \"".preg_replace("/:$/","",$page)."\"";
+              print $this->getLang('abo_cat')." \"".preg_replace("/:$/", "", $page)."\"";
               $nbCat++;
             }
             print "</li></div></ul></td>";
@@ -144,13 +151,13 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
             else {
               print "<td nowrap style=\"padding-left:10px;\" align=\"right\"><div class=\"bar\" id=\"bar__bottom\" style=\"border:none;\">";
               if ($titrePage) {
-                if ($user==$INFO['client']) 
-                  tpl_link(wl($page,'do=unsubscribe'),
+                if ($user == $INFO['client']) 
+                  tpl_link(wl($page, 'do=unsubscribe'),
                               $pre.(($inner)?$inner:$lang['btn_unsubscribe']).$suf,
                               'class="action unsubscribe" rel="nofollow"');
               }
               else {
-                if ($user==$INFO['client'])
+                if ($user == $INFO['client'])
                   tpl_link(wl($page,'do=unsubscribens'),
                               $pre.(($inner)?$inner:$lang['btn_unsubscribens']).$suf,
                               'class="action unsubscribens" rel="nofollow"');
@@ -167,7 +174,7 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
             print '<div class="level1"><p>'.$this->getLang('abo_noabo').'.</p></div>';
             print '<div class="level1"><p>'.$this->getLang('abo_whoto').'</p></div>';
         }
-        //if (in_array('admin',$INFO['userinfo']['grps'])) {
+        
         if (auth_ismanager($INFO['client'])) {
           if (!$admin) print $this->getLang('abo_estadmin').'<a href="?do=listeabo&admin=true" class="wikilink">'.$this->getLang('abo_voirtousabo').'</a>.<br />';
           if ($admin || $user != $INFO['client']) print '<a href="?do=listeabo" class="wikilink">'.$this->getLang('abo_voirvosabo').'</a>.';
@@ -183,8 +190,8 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
             if($file != "." && $file != "..") {
               if (is_dir($dir."/".$file)) 
                 $this->list_mlist($dir."/".$file, $recursive, $files);
-              else if (preg_match("/\.mlist$/",$file)) 
-                $files[]=$dir."/".$file;
+              else if (preg_match("/\.mlist$/", $file)) 
+                $files[] =$dir."/".$file;
             }
           }
           closedir($dh);
@@ -195,4 +202,4 @@ class action_plugin_listeabo extends DokuWiki_Action_Plugin {
 
 }
 
-// vim:ts=4:sw=4:et:enc=utf-8:
+// vim:ts=4:sw=4:et:
